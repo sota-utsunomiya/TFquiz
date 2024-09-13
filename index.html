@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ウソ？ホント？クイズ</title>
+    <style>
+        body {
+            font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f8ff;
+            transition: background-color 0.5s;
+        }
+        #app {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            max-width: 500px;
+            width: 90%;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+        #start-button, #question-number-screen button, #normal-mode-button, #prediction-mode-button,  #play-again-button {
+            background-color: #4CAF50;
+            color: white;
+        }
+        #predicted-score{
+            margin-top:60px;
+            width:100%;
+        }
+        #start-prediction-quiz{
+            margin-top:4px;
+            background-color: #4CAF50;
+            color:white;
+            padding:12px 24px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor:pointer;
+            transition: all 0.3s;
+        }
+        #true-button {
+            background-color: #2196F3;
+            color: white;
+        }
+        #false-button {
+            background-color: #f44336;
+            color: white;
+        }
+        #next-button {
+            background-color: #FF9800;
+            color: white;
+        }
+        button:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+        #question {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        #result {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        #explanation {
+            font-size: 18px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .screen {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .active {
+            display: block;
+            opacity: 1;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        #progress {
+            width: 0%;
+            height: 100%;
+            background-color: #4CAF50;
+            transition: width 0.5s;
+        }
+        #score {
+            font-size: 20px;
+            color: #333;
+            margin-top: 20px;
+        }
+        #fireworks {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        #predicted-score-display{
+            display:block;
+            position:absolute;
+            top:-50px;
+            left:50%;
+            transform:translateX(-50%);
+            background-color: rgba(0,0,0,0.7);
+            color:white;
+            padding:12px 24px;
+            border-radius: 12px;
+            font-size: 30px;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            pointer-events:none;
+            white-space:nowrap;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            opacity:1;
+        }
+        #prediction-result-table {
+            width: 100%; 
+            margin-left:auto;
+            margin-right:auto;
+            border-collapse: collapse;
+            margin-top:20px;
+            max-height:150px;
+            overflow-y:auto;
+            display:block;
+            font-size: 14px;
+        }
+        #prediction-result-table th, #prediction-result-table td {
+            padding: 4px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            border-right: 1px solid #ddd;
+            transition: background-color 0.3s ease;
+            max-width: 200px;
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+        #prediction-result-table th:last-child,#prediction-result-table td:last-child{
+            border-right:none;
+        }
+        #final-score {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #prediction-accuracy {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #play-again-button {
+            margin-top: 5px;
+            padding: 8px 16px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #prediction-result-table th:last-child, #prediction-result-table td:last-child {
+            border-right: none;
+        }
+        #prediction-result-table th:nth-child(1), #prediction-result-table td:nth-child(1) {
+            width: 10%;
+        }
+        #prediction-result-table th:nth-child(2), #prediction-result-table td:nth-child(2) {
+            width: 50%;
+        }
+        #prediction-result-table th:nth-child(3), #prediction-result-table td:nth-child(3),
+        #prediction-result-table th:nth-child(4), #prediction-result-table td:nth-child(4)
+        {
+            width: 20%
+        }
+        </style>
+</head>
+<body>
+    <div id="app">
+        <div id="start-screen" class="screen active">
+            <h1>ウソ？ホント？クイズ</h1>
+            <button id="start-button">スタート</button>
+        </div>
+        <div id="mode-selection-screen" class="screen">
+            <h2>モードを選択してください</h2>
+            <button id="normal-mode-button">通常モード</button>
+            <button id="prediction-mode-button">未来予測モード</button>
+        </div>
+        <div id="question-number-screen" class="screen">
+            <h2>問題数と時間制限を選択してください</h2>
+            <label><input type="radio" name="timer" value="あり"> 時間制限あり (5秒)</label><br>
+            <label><input type="radio" name="timer" value="なし" checked> 時間制限なし</label><br>
+            <button class="question-number-button" data-number="5">5問</button>
+            <button class="question-number-button" data-number="10">10問</button>
+            <button class="question-number-button" data-number="20">20問</button>
+        </div>
+        <div id="prediction-input-screen" class="screen">
+            <h2>最終スコアを予想して<br>ボーナスポイントをつかみ取りましょう</h2>
+            <div style="position: relative; width: 100%;">
+                <p id="predicted-score-display" style="position: absolute; top: -30px; left: 50%; transform: translateX(-50%);">0</p>
+                <input type="range" id="predicted-score" min="0" max="20" value="0" oninput="updatePredictedScoreDisplay(this.value)">
+            </div>
+            <button id="start-prediction-quiz">クイズを開始</button>
+        </div>
+        <div id="quiz-screen" class="screen">
+            <h2 id="question"></h2>
+            <button id="true-button">ホント</button>
+            <button id="false-button">ウソ</button>
+            <div id="progress-bar"><div id="progress"></div></div>
+        </div>
+        <div id="result-screen" class="screen">
+            <h2 id="result"></h2>
+            <p id="explanation"></p>
+            <button id="next-button">次の問題</button>
+            <div id="score"></div>
+        </div>
+        <div id="prediction-result-screen" class="screen">
+            <h2>クイズ結果</h2>
+            <table id="prediction-result-table">
+                <thead>
+                    <tr>
+                        <th>番号</th>
+                        <th>問題</th>
+                        <th>回答</th>
+                        <th>正解</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <p id="final-score"></p>
+            <p id="prediction-accuracy"></p>
+            <button id="play-again-button">もう一度プレイ</button>
+        </div>
+    </div>
+    <canvas id="fireworks"></canvas>
+    <audio id="correct-sound" src="sounds3/correct.mp3"></audio>
+    <audio id="incorrect-sound" src="sounds3/incorrect.mp3"></audio>
+
+</body>
+</html>
+
+    <script>
+        const questions = [
+            {
+                question: "カタツムリは眠るとき、最大3年間眠ることができる。",
+                answer: true,
+                explanation: "ホントです。カタツムリは乾燥などの環境に応じて長期間眠ることがあります。"
+            },
+            {
+                question: "コウモリは完全に盲目である。",
+                answer: false,
+                explanation: "ウソです。コウモリは視覚も持っていますが、エコロケーションが主なナビゲーション手段です。"
+            },
+            {
+                question: "ペンギンは実は哺乳類である。",
+                answer: false,
+                explanation: "ウソです。ペンギンは鳥類です。"
+            },
+            {
+                question: "フラミンゴの羽がピンクなのはエビを食べるからだ。",
+                answer: true,
+                explanation: "ホントです。食べるエビに含まれる色素が羽をピンクにします。"
+            },
+            {
+                question: "人間の指の爪は、髪の毛と同じ素材でできている。",
+                answer: true,
+                explanation: "ホントです。両方ともケラチンというタンパク質でできています。"
+            },
+            {
+                question: "日本の国旗の赤い円は、月を表している。",
+                answer: false,
+                explanation: "ウソです。赤い円は太陽を表しています。"
+            },
+            {
+                question: "チーズは一度冷凍すると元の状態に戻せない。",
+                answer: false,
+                explanation: "ウソです。チーズは冷凍しても食感や風味が多少変わることはあるが、問題なく食べられます。"
+            },
+            {
+                question: "ナポレオンは実は非常に背が高かった。",
+                answer: false,
+                explanation: "ウソです。ナポレオンは当時の平均身長より少し低めでした。"
+            },
+            {
+                question: "クモは水中で1時間以上生き延びることができる。",
+                answer: true,
+                explanation: "ホントです。一部のクモは水中で酸素を保持して生き延びられます。"
+            },
+            {
+                question: "カンガルーは後ろ向きにジャンプすることができない。",
+                answer: true,
+                explanation: "ホントです。カンガルーはその体の構造上、前方にしかジャンプできません。"
+            },
+            {
+                question: "シマウマの縞模様はすべて同じパターンである。",
+                answer: false,
+                explanation: "ウソです。シマウマの縞模様は一頭一頭異なります。"
+            },
+            {
+                question: "タコの心臓は3つある。",
+                answer: true,
+                explanation: "ホントです。タコには3つの心臓があります。"
+            },
+            {
+                question: "ピーナッツは実は木の実である。",
+                answer: false,
+                explanation: "ウソです。ピーナッツは地中で成長するマメ科の植物です。"
+            },
+            {
+                question: "ネコは完全な肉食動物であり、野菜や果物を食べることはできない。",
+                answer: false,
+                explanation: "ウソです。ネコは主に肉食ですが、少量の野菜や果物を食べることもあります。"
+            },
+            {
+                question: "マツタケの香り成分は、古い書物の香りに似ている。",
+                answer: true,
+                explanation: "ホントです。マツタケの香りには古書の香りと共通の成分が含まれています。"
+            },
+            {
+                question: "ヘビは耳がないので、音を全く聞くことができない。",
+                answer: false,
+                explanation: "ウソです。ヘビには耳はありませんが、地面の振動を通じて音を感じ取ることができます。"
+            },
+            {
+                question: "牛は完全に色盲であり、赤い色を見ることができない。",
+                answer: true,
+                explanation: "ホントです。牛は赤色を識別できず、動く物体に反応します。"
+            },
+            {
+                question: "ハチは一度刺すと自分も死んでしまう。",
+                answer: true,
+                explanation: "ホントです。ミツバチは一度刺すと針が抜け、その結果死んでしまいます。"
+            },
+            {
+                question: "カンガルーは泳ぐことができる。",
+                answer: true,
+                explanation: "ホントです。カンガルーは泳ぐことができます。"
+            },
+            {
+                question: "オウムは人間の言葉を理解して話している。",
+                answer: false,
+                explanation: "ウソです。オウムは人間の言葉を真似て発音するだけで、意味を理解しているわけではありません。"
+            }
+        ];
+
+        let currentQuestions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let totalQuestions = 0;
+        let timerEnabled = false;
+        let timer;
+        let currentMode = 'normal';
+        let predictedScore = 0;
+        let predictionResults = [];
+
+        const startScreen = document.getElementById('start-screen');
+        const questionNumberScreen = document.getElementById('question-number-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const questionElement = document.getElementById('question');
+        const resultElement = document.getElementById('result');
+        const explanationElement = document.getElementById('explanation');
+        const progressBar = document.getElementById('progress');
+        const scoreElement = document.getElementById('score');
+        const fireworksCanvas = document.getElementById('fireworks');
+        const ctx = fireworksCanvas.getContext('2d');
+
+        document.getElementById('start-button').addEventListener('click', showModeSelectionScreen);
+        document.querySelectorAll('.question-number-button').forEach(button => {
+            button.addEventListener('click', () => {
+                totalQuestions = parseInt(button.dataset.number);
+                setMaxScore(totalQuestions);
+                if (currentMode === 'normal'){
+                    startQuiz();
+                } else{
+                    showPredictionInputScreen();
+                }
+            });
+        });
+        document.getElementById('true-button').addEventListener('click', () => checkAnswer(true));
+        document.getElementById('false-button').addEventListener('click', () => checkAnswer(false));
+        document.getElementById('next-button').addEventListener('click', nextQuestion);
+        document.getElementById('normal-mode-button').addEventListener('click', () => selectMode('normal'));
+        document.getElementById('prediction-mode-button').addEventListener('click', () => selectMode('prediction'));
+        document.getElementById('start-prediction-quiz').addEventListener('click', startPredictionQuiz);
+        document.getElementById('play-again-button').addEventListener('click', resetQuiz);
+
+        function showQuestionNumberScreen() {
+            startScreen.classList.remove('active');
+            questionNumberScreen.classList.add('active');
+        }
+
+        function showModeSelectionScreen() {
+            startScreen.classList.remove('active');
+            document.getElementById('mode-selection-screen').classList.add('active');
+        }
+
+        function selectMode(mode) {
+            currentMode = mode;
+            showQuestionNumberScreen();
+        }
+
+        function showQuestionNumberScreen() {
+            hideAllScreens();
+            document.getElementById('question-number-screen').classList.add('active');
+        }
+        
+        function showPredictionInputScreen() {
+            hideAllScreens();
+            document.getElementById('prediction-input-screen').classList.add('active');
+        }
+        
+        function hideAllScreens() {
+            document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
+        }
+
+        function startPredictionQuiz() {
+            predictedScore = parseInt(document.getElementById('predicted-score').value);
+            document.getElementById('prediction-input-screen').classList.remove('active');
+            const totalScoreDisplay = document.getElementById('total-score-display');
+            if (totalScoreDisplay) {
+                totalScoreDisplay.remove();
+            }
+            score = 0;
+            startQuiz(totalQuestions);
+        }
+
+        function startQuiz(questionCount) {
+            currentQuestions = shuffleArray(questions).slice(0, totalQuestions);
+            currentQuestionIndex = 0;
+            score = 0;
+            const timerOption = document.querySelector('input[name="timer"]:checked').value;
+            timerEnabled = (timerOption === 'あり');
+            
+            if (currentMode === 'normal') {
+                questionNumberScreen.classList.remove('active');
+            } else {
+                document.getElementById('prediction-input-screen').classList.remove('active');
+                predictedScore = parseInt(document.getElementById('predicted-score').value);
+            }
+            quizScreen.classList.add('active');
+            showQuestion();
+            if (currentMode === 'prediction') {
+                predictionResults = [];
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function showQuestion() {
+            const question = currentQuestions[currentQuestionIndex];
+            if (!question) {
+                console.error('Question data is not available');
+                return;
+            }
+
+            questionElement.textContent = question.question;
+            progressBar.style.width = `${(currentQuestionIndex / totalQuestions) * 100}%`;
+            if (timerEnabled) {
+                startTimer();
+            }
+
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            let timeLeft = 5;  
+            progressBar.style.width = '100%';
+
+            timer = setInterval(() => {
+                timeLeft--;
+                progressBar.style.width = `${(timeLeft / 5) * 100}%`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    checkAnswer(null);  
+                }
+            }, 1000);
+        }
+
+        function updatePredictedScoreDisplay(value){
+            const display = document.getElementById('predicted-score-display');
+            display.textContent = value;
+            document.addEventListener('DOMContentLoaded', () => {
+                const slider = document.getElementById('predicted-score');
+                updatePredictedScoreDisplay(slider.value);
+            })
+        }
+
+        function setMaxScore(maxScore){
+            document.getElementById('predicted-score').max = maxScore;
+        }
+
+
+        function checkAnswer(userAnswer) {
+            clearInterval(timer); 
+            const question = currentQuestions[currentQuestionIndex];
+            const isCorrect = (userAnswer !== null && userAnswer === question.answer);
+
+            if (currentMode === 'normal') {
+                const correctSound = document.getElementById('correct-sound');
+                const incorrectSound = document.getElementById('incorrect-sound');
+                
+                if (isCorrect) {
+                    score++;
+                    correctSound.play();
+                }else{
+                    incorrectSound.play();
+                }
+                
+                quizScreen.classList.remove('active');
+                resultScreen.classList.add('active');
+
+                resultElement.textContent = isCorrect ? '正解！' : '不正解...';
+                resultElement.style.color = isCorrect ? '#4CAF50' : '#f44336';
+
+                explanationElement.textContent = question.explanation;
+                scoreElement.textContent = `スコア: ${score} / ${totalQuestions}`;
+            }else{
+                predictionResults.push({
+                    question: question.question,
+                    userAnswer: userAnswer ? 'ホント' : 'ウソ',
+                    correctAnswer: question.answer ? 'ホント' : 'ウソ'
+                });
+                if (isCorrect) {
+                    score++;
+                }
+                nextQuestion();
+            }
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < totalQuestions) {
+                if (currentMode ==='normal'){
+                    resultScreen.classList.remove('active');
+                    quizScreen.classList.add('active');
+                }
+                showQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            if (currentMode === 'normal'){
+                resultElement.textContent = `クイズ終了！ 最終スコア: ${score} / ${totalQuestions}`;
+                resultElement.style.color = '#333';
+                explanationElement.textContent = '';
+                document.getElementById('next-button').textContent = 'もう一度プレイ';
+                document.getElementById('next-button').removeEventListener('click', nextQuestion);
+                document.getElementById('next-button').addEventListener('click', resetQuiz);
+                if (score === totalQuestions){
+                    showFireworks();
+                }
+            }else{
+                showPredictionResults();
+            }
+        }
+
+        function showPredictionResults() {
+            document.getElementById('quiz-screen').classList.remove('active');
+            document.getElementById('prediction-result-screen').classList.add('active');
+            
+            const tableBody = document.querySelector('#prediction-result-table tbody');
+            tableBody.innerHTML = '';
+            
+            predictionResults.forEach((result, index) => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = index + 1;
+                row.insertCell(1).textContent = result.question;
+                row.insertCell(2).textContent = result.userAnswer;
+                row.insertCell(3).textContent = result.correctAnswer;
+                row.style.backgroundColor = result.userAnswer === result.correctAnswer ? '#e6ffe6' : '#ffe6e6';
+            });
+
+            const finalScoreElement = document.getElementById('final-score');
+            finalScoreElement.textContent = `最終スコア: ${score} / ${totalQuestions}`;
+            finalScoreElement.style.fontSize = '24px';
+            finalScoreElement.style.fontWeight = 'bold';
+
+            const predictionAccuracyElement = document.getElementById('prediction-accuracy');
+            let totalScore = score;
+            if (score === predictedScore) {
+                totalScore += 1;
+                predictionAccuracyElement.textContent = '予想成功！ +1点';
+                predictionAccuracyElement.style.color = '#4CAF50';
+                showFireworks();
+            } else {
+                predictionAccuracyElement.textContent = '予想失敗...';
+                predictionAccuracyElement.style.color = '#f44336';
+            }
+            predictionAccuracyElement.style.fontSize = '20px';
+            predictionAccuracyElement.style.fontWeight = 'bold';
+
+            const existingTotalScoreDisplay = document.getElementById('total-score-display');
+            if (existingTotalScoreDisplay) {
+                existingTotalScoreDisplay.remove();
+            }
+            
+            const totalScoreDisplay = document.createElement('div');
+            totalScoreDisplay.id = 'total-score-display';
+            totalScoreDisplay.textContent = `合計スコア: ${totalScore}`;
+            totalScoreDisplay.style.fontSize = '36px';
+            totalScoreDisplay.style.fontWeight = 'bold';
+            totalScoreDisplay.style.color = '#FFD700';
+            totalScoreDisplay.style.textAlign = 'center';
+            totalScoreDisplay.style.marginTop = '20px';
+            totalScoreDisplay.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+            totalScoreDisplay.style.opacity = '0';
+            totalScoreDisplay.style.transform = 'scale(0.5)';
+            
+            document.getElementById('prediction-result-screen').appendChild(totalScoreDisplay);
+            
+            setTimeout(() => {
+                totalScoreDisplay.style.transform = 'scale(1.5)';
+                totalScoreDisplay.style.opacity = '1';
+            }, 100);
+        }         
+        
+        function displayTotalScore(totalScore) {
+            const existingTotalScoreDisplay = document.getElementById('total-score-display');
+            if (existingTotalScoreDisplay) {
+                existingTotalScoreDisplay.remove();
+            }
+
+            const totalScoreDisplay = document.createElement('div');
+            totalScoreDisplay.id = 'total-score-display';
+            totalScoreDisplay.textContent = `合計スコア: ${totalScore}`;
+            totalScoreDisplay.style.fontSize = '36px';
+            totalScoreDisplay.style.fontWeight = 'bold';
+            totalScoreDisplay.style.color = '#FFD700';
+            totalScoreDisplay.style.textAlign = 'center';
+            totalScoreDisplay.style.marginTop = '20px';
+            totalScoreDisplay.style.transition = 'transform 0.5s ease, opacity 0.5s ease';
+            totalScoreDisplay.style.opacity = '0';
+            totalScoreDisplay.style.transform = 'scale(0.5)';
+            
+            document.getElementById('prediction-result-screen').appendChild(totalScoreDisplay);
+            
+            setTimeout(() => {
+                totalScoreDisplay.style.transform = 'scale(1.5)';
+                totalScoreDisplay.style.opacity = '1';
+            }, 100);
+        }
+
+        function resetQuiz() {
+            if (currentMode === 'normal'){
+                resultScreen.classList.remove('active');
+            } else {
+                document.getElementById('prediction-result-screen').classList.remove('active');
+            }
+            startScreen.classList.add('active');
+            document.getElementById('next-button').textContent = '次の問題';
+            document.getElementById('next-button').removeEventListener('click', resetQuiz);
+            document.getElementById('next-button').addEventListener('click', nextQuestion);
+            stopFireworks();
+            const totalScoreDisplay = document.getElementById('total-score-display');
+            if (totalScoreDisplay) {
+                totalScoreDisplay.remove();
+            }
+
+            currentMode = 'normal';
+            predictedScore = 0;
+            predictionResults = [];
+        }
+
+        // 花火の実装
+        let fireworks = [];
+        let particles = [];
+
+        function showFireworks() {
+        fireworksCanvas.width = window.innerWidth;
+        fireworksCanvas.height = window.innerHeight;
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+        for (let i = 0; i < 10; i++) {
+            fireworks.push(new Firework());
+        }
+
+        animateFireworks();
+        setTimeout(() => {
+            stopFireworks(); 
+            displayTotalScore(score + 1); 
+        }, 5000); 
+    }
+    
+    function transitionToNextScreen() {
+        if (currentMode === 'normal') {
+            resultScreen.classList.add('active');
+        } else {
+            document.getElementById('prediction-result-screen').classList.add('active');
+        }
+    }
+
+    function animateFireworks() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.fillRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+
+        fireworks.forEach((firework, index) => {
+            firework.update();
+            firework.draw();
+            if (firework.exploded && firework.particles.length === 0) {
+                fireworks.splice(index, 1);
+            }
+        });
+        
+        particles.forEach((particle, index) => {
+            particle.update();
+            particle.draw();
+            if (particle.lifespan <= 0) {
+                 particles.splice(index, 1);
+                }
+            });
+            
+            if (fireworks.length > 0 || particles.length > 0) {
+                requestAnimationFrame(animateFireworks);
+            }
+        }
+
+    function stopFireworks() {
+        fireworks = [];
+        particles = [];
+        ctx.clearRect(0, 0, fireworksCanvas.width, fireworksCanvas.height);
+    }
+
+    class Firework {
+        constructor() {
+            this.x = Math.random() * fireworksCanvas.width;
+            this.y = fireworksCanvas.height;
+            this.sx = this.x;
+            this.sy = this.y;
+            this.tx = this.x;
+            this.ty = Math.random() * (fireworksCanvas.height / 3);
+            this.speed = Math.random() * 7 + 8;
+            this.angle = Math.atan2(this.ty - this.sy, this.tx - this.sx);
+            this.exploded = false;
+            this.particles = [];
+        }
+
+        update() {
+            if (!this.exploded) {
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+
+                if (Math.abs(this.x - this.tx) < this.speed && Math.abs(this.y - this.ty) < this.speed) {
+                    this.exploded = true;
+                    this.explode();
+                }
+            } else {
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    this.particles[i].update();
+                    if (this.particles[i].lifespan <= 0) {
+                        this.particles.splice(i, 1);
+                    }
+                }
+            }
+        }
+
+        draw() {
+            if (!this.exploded) {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = 'white';
+                ctx.fill();
+            } else {
+                for (let particle of this.particles) {
+                    particle.draw();
+                }
+            }
+        }
+
+        explode() {
+            for (let i = 0; i < 100; i++) {
+                this.particles.push(new Particle(this.x, this.y));
+            }
+        }
+    }
+
+    class Particle {
+        constructor(x, y) {
+            this.x = x;
+            this.y = y;
+            this.speed = Math.random() * 3 + 1;
+            this.angle = Math.random() * Math.PI * 2;
+            this.color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            this.lifespan = 100;
+        }
+
+        update() {
+            this.x += Math.cos(this.angle) * this.speed;
+            this.y += Math.sin(this.angle) * this.speed;
+            this.lifespan--;
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, 1, 0, Math.PI * 2);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+        }
+    }
+</script>
